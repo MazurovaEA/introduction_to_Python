@@ -14,7 +14,6 @@ gamer = 1
 game_type = 0    # Переменная для выбора типа игры
 gaming = False
 # Определяем константы этапов разговора
-# CHOICE, GAME = range(2)
 CHOICE = 0
 
 def start(update, _):
@@ -27,53 +26,56 @@ def start(update, _):
         'Начинаем игру! Выберите с кем хотите сыграть?'
         'Команда /cancel, чтобы прекратить игру.\n\n',
         reply_markup=markup_key,)
-    # переходим к этапу `GENDER`, это значит, что ответ
-    # отправленного сообщения в виде кнопок будет список 
-    # обработчиков, определенных в виде значения ключа `GENDER`
+
     return CHOICE
 
 # Обрабатываем выбор пользователя
-def choice(update, context):
+def message(update, context):
     # определяем выбор
-    global game_type 
+    global game_type
     game_type = update.message.text
-    print(game_type)
     # Следующее сообщение с удалением клавиатуры `ReplyKeyboardRemove`
     context.bot.send_message(update.effective_chat.id,
         'Поехали! (с)')
     context.bot.send_message(update.effective_chat.id,f'На столе лежит {total_candies} конфет')
     gaming = True
     context.bot.send_message(update.effective_chat.id, f'Введите количество конфет, которые вы берете (не более {max_candies}): ')
+    if game_type == 'Человек':
+        context.bot.send_message(update.effective_chat.id, f'Сейчас ход игрока №{gamer}')
     return ConversationHandler.END
 
 def cancel(update, _):
-    # Отвечаем на отказ поговорить
+    # Отвечаем на отказ играть
     update.message.reply_text(
         'Мое дело предложить - Ваше отказаться.'
         ' Будет скучно - пиши.', 
         reply_markup=ReplyKeyboardRemove()
     )
-    # Заканчиваем разговор.
+    # Заканчиваем игру.
     return ConversationHandler.END
 
-def message(update, context):
+def game(update, context):
     global total_candies
+    global gamer
     text = update.message.text
-    if not text.isdigit() or int(text) == 0:
-        context.bot.send_message(update.effective_chat.id, f'Вы ввели неправильное значение, попробуйте снова.') 
-    elif int(text) > max_candies:
-        context.bot.send_message(update.effective_chat.id, f'Вы ввели значение больше {max_candies}, попробуйте снова.')
-    elif total_candies <= max_candies and int(text) > total_candies:
-        context.bot.send_message(update.effective_chat.id, f'Вы ввели значение больше чем конфет на столе, попробуйте снова.')
-    else:
-        take_candies = int(text)
-        total_candies = total_candies - take_candies
-        print(total_candies)
-        print(game_type)     
-        if total_candies == 1:
-            context.bot.send_message(update.effective_chat.id, f'Выиграл игрок')
-            gaming = False
-            return
+    if game_type == 'Не очень умный компьютер' or game_type == 'Умный компьютер':  
+        if not text.isdigit() or int(text) == 0:
+            context.bot.send_message(update.effective_chat.id, f'Вы ввели неправильное значение, попробуйте снова.') 
+        elif int(text) > max_candies:
+            context.bot.send_message(update.effective_chat.id, f'Вы ввели значение больше {max_candies}, попробуйте снова.')
+        elif total_candies <= max_candies and int(text) > total_candies:
+            context.bot.send_message(update.effective_chat.id, f'Вы ввели значение больше чем конфет на столе, попробуйте снова.')
+        else:
+            take_candies = int(text)
+            total_candies = total_candies - take_candies
+            if total_candies == 1:
+                context.bot.send_message(update.effective_chat.id, f'Выиграл игрок')
+                total_candies = 50
+                return
+            if total_candies == 0:
+                context.bot.send_message(update.effective_chat.id, f'Выиграл компьютер')
+                total_candies = 50
+                return
         if game_type == 'Не очень умный компьютер':   
             if total_candies <= max_candies:
                 take_candies = randint(1, total_candies)
@@ -82,65 +84,51 @@ def message(update, context):
             context.bot.send_message(update.effective_chat.id, f'Ходит компьютер и берет {take_candies} конфет')
             total_candies = total_candies - take_candies
             context.bot.send_message(update.effective_chat.id, f'Осталось {total_candies} конфет')
+            if total_candies <= 1:
+                context.bot.send_message(update.effective_chat.id, f'Выиграл компьютер')
+                # gaming = False
+                total_candies = 50
+                return
+        elif game_type == 'Умный компьютер':   
+            if total_candies == max_candies:
+                take_candies = max_candies-1
+            elif total_candies < max_candies:
+                take_candies = total_candies-1
+            elif total_candies <= max_candies*2 and total_candies >= (max_candies+1):
+                take_candies = total_candies % (max_candies+1)-1
+                if take_candies <= 0:
+                    take_candies = max_candies
+            else:
+                take_candies = total_candies % (max_candies+1)-1
+            context.bot.send_message(update.effective_chat.id, f'Ходит компьютер и берет {take_candies} конфет')
+            total_candies = total_candies - take_candies
+            context.bot.send_message(update.effective_chat.id, f'Осталось {total_candies} конфет')
             if total_candies == 1:
                 context.bot.send_message(update.effective_chat.id, f'Выиграл компьютер')
-                gaming = False
+                # gaming = False
+                total_candies = 50
                 return
-
-
-
-
-
-
-
-
-# 'Человек', 'Умный компьютер', 'Не очень умный компьютер'
-
-
-    # if X == 1 and gamer == 2:
-    #     if Y == 0:
-    #         if total_candies <= max_candies:
-    #             take_candies = randint(1, total_candies)
-    #         else:
-    #             take_candies = randint(1, max_candies)
-    #     else:
-    #         if total_candies == max_candies:
-    #             take_candies = max_candies-1
-    #         elif total_candies < max_candies:
-    #             take_candies = total_candies-1
-    #         elif total_candies <= max_candies*2 and total_candies >= (max_candies+1):
-    #             take_candies = total_candies % (max_candies+1)-1
-    #             if take_candies <= 0:
-    #                 take_candies = max_candies
-    #         else:
-    #             take_candies = total_candies % (max_candies+1)-1
-
-    #     print(f'Ходит компьютер и берет {take_candies} конфет')
-    # else:
-    #     print(f'Ходит игрок №{gamer}')
-    #     take_candies = enter_number()
-
-    # total_candies = total_candies - take_candies
-    # if total_candies > 1:
-    #     print(f'Осталось {total_candies} конфет')
-    #     if gamer == 1:
-    #         gamer = 2
-    #     else:
-    #         gamer = 1
-    # elif total_candies == 0:
-    #     if gamer == 1:
-    #         gamer = 2
-    #     else:
-    #         gamer = 1
-    #     if X == 1 and gamer == 2:
-    #         print(f'Победа компьютера!')
-    #     else:
-    #         print(f'Победа игрока №{gamer}')
-    #     gaming = False
-    # else:
-    #     if X == 1 and gamer == 2:
-    #         print(f'Осталась одна конфета! Победа компьютера!')
-    #     else:
-    #         print(f'Осталась одна конфета! Победа игрока №{gamer}')
-    #     gaming = False
-
+    if game_type == 'Человек':
+        if not text.isdigit() or int(text) == 0:
+            context.bot.send_message(update.effective_chat.id, f'Вы ввели неправильное значение, попробуйте снова.') 
+        elif int(text) > max_candies:
+            context.bot.send_message(update.effective_chat.id, f'Вы ввели значение больше {max_candies}, попробуйте снова.')
+        elif total_candies <= max_candies and int(text) > total_candies:
+            context.bot.send_message(update.effective_chat.id, f'Вы ввели значение больше чем конфет на столе, попробуйте снова.')
+        else:
+            take_candies = int(text)
+            total_candies = total_candies - take_candies
+            context.bot.send_message(update.effective_chat.id, f'Осталось {total_candies} конфет')
+            if total_candies == 1:
+                context.bot.send_message(update.effective_chat.id, f'Выиграл игрок №{gamer}')
+                # gaming = False
+                total_candies = 50
+                gamer = 1
+                return
+            gamer = 2 if gamer == 1 else 1
+            context.bot.send_message(update.effective_chat.id, f'Сейчас ход игрока №{gamer}')
+            if total_candies == 0:
+                context.bot.send_message(update.effective_chat.id, f'Выиграл игрок №{gamer}')
+                total_candies = 50
+                gamer = 1
+                return
