@@ -17,6 +17,10 @@ gaming = False
 CHOICE = 0
 
 def start(update, _):
+    global total_candies, gamer, gaming
+    total_candies = 50
+    gamer = 1
+    gaming = True
     # Список кнопок для ответа
     reply_keyboard = [['Человек', 'Умный компьютер', 'Не очень умный компьютер']]
     # Создаем простую клавиатуру для ответа
@@ -38,7 +42,7 @@ def message(update, context):
     context.bot.send_message(update.effective_chat.id,
         'Поехали! (с)')
     context.bot.send_message(update.effective_chat.id,f'На столе лежит {total_candies} конфет')
-    gaming = True
+    # gaming = True
     context.bot.send_message(update.effective_chat.id, f'Введите количество конфет, которые вы берете (не более {max_candies}): ')
     if game_type == 'Человек':
         context.bot.send_message(update.effective_chat.id, f'Сейчас ход игрока №{gamer}')
@@ -55,9 +59,11 @@ def cancel(update, _):
     return ConversationHandler.END
 
 def game(update, context):
-    global total_candies
-    global gamer
+    global total_candies, gamer, gaming
     text = update.message.text
+    if not gaming:
+        context.bot.send_message(update.effective_chat.id, f'Запустите игру командой старт')
+        return 
     if game_type == 'Не очень умный компьютер' or game_type == 'Умный компьютер':  
         if not text.isdigit() or int(text) == 0:
             context.bot.send_message(update.effective_chat.id, f'Вы ввели неправильное значение, попробуйте снова.') 
@@ -70,11 +76,13 @@ def game(update, context):
             total_candies = total_candies - take_candies
             if total_candies == 1:
                 context.bot.send_message(update.effective_chat.id, f'Выиграл игрок')
-                total_candies = 50
+                gaming = False
+                # total_candies = 50
                 return
             if total_candies == 0:
                 context.bot.send_message(update.effective_chat.id, f'Выиграл компьютер')
-                total_candies = 50
+                gaming = False
+                # total_candies = 50
                 return
         if game_type == 'Не очень умный компьютер':   
             if total_candies <= max_candies:
@@ -86,8 +94,8 @@ def game(update, context):
             context.bot.send_message(update.effective_chat.id, f'Осталось {total_candies} конфет')
             if total_candies <= 1:
                 context.bot.send_message(update.effective_chat.id, f'Выиграл компьютер')
-                # gaming = False
-                total_candies = 50
+                gaming = False
+                # total_candies = 50
                 return
         elif game_type == 'Умный компьютер':   
             if total_candies == max_candies:
@@ -105,8 +113,8 @@ def game(update, context):
             context.bot.send_message(update.effective_chat.id, f'Осталось {total_candies} конфет')
             if total_candies == 1:
                 context.bot.send_message(update.effective_chat.id, f'Выиграл компьютер')
-                # gaming = False
-                total_candies = 50
+                gaming = False
+                # total_candies = 50
                 return
     if game_type == 'Человек':
         if not text.isdigit() or int(text) == 0:
@@ -121,14 +129,15 @@ def game(update, context):
             context.bot.send_message(update.effective_chat.id, f'Осталось {total_candies} конфет')
             if total_candies == 1:
                 context.bot.send_message(update.effective_chat.id, f'Выиграл игрок №{gamer}')
-                # gaming = False
-                total_candies = 50
-                gamer = 1
+                gaming = False
+                # total_candies = 50
+                # gamer = 1
                 return
             gamer = 2 if gamer == 1 else 1
             context.bot.send_message(update.effective_chat.id, f'Сейчас ход игрока №{gamer}')
             if total_candies == 0:
                 context.bot.send_message(update.effective_chat.id, f'Выиграл игрок №{gamer}')
-                total_candies = 50
-                gamer = 1
+                gaming = False
+                # total_candies = 50
+                # gamer = 1
                 return
